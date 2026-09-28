@@ -1,0 +1,40 @@
+"""llm-trace CLI."""
+import argparse
+import json
+
+from .store import TraceStore
+
+
+def main():
+    ap = argparse.ArgumentParser(prog="llm-trace")
+    sub = ap.add_subparsers(dest="cmd", required=True)
+
+    r = sub.add_parser("record", help="record a call manually")
+    r.add_argument("--model", required=True)
+    r.add_argument("--prompt", required=True)
+    r.add_argument("--response", required=True)
+    r.add_argument("--tokens-in", type=int, default=0)
+    r.add_argument("--tokens-out", type=int, default=0)
+    r.add_argument("--latency-ms", type=int, default=0)
+
+    sub.add_parser("summary", help="recent traces")
+    sub.add_parser("totals", help="aggregated totals")
+
+    args = ap.parse_args()
+    store = TraceStore()
+
+    if args.cmd == "record":
+        rid = store.record(args.model, args.prompt, args.response,
+                           args.tokens_in, args.tokens_out, args.latency_ms)
+        print(json.dumps({"recorded": True, "id": rid}))
+    elif args.cmd == "summary":
+        for row in store.summary():
+            print(f"[{row['id']}] {row['ts']} {row['model']} "
+                  f"in={row['tokens_in']} out={row['tokens_out']} "
+                  f"{row['latency_ms']}ms")
+    elif args.cmd == "totals":
+        print(json.dumps(store.totals(), indent=2))
+
+
+if __name__ == "__main__":
+    main()
