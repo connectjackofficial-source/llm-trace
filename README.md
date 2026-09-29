@@ -38,6 +38,12 @@ python -m llm_trace.cli totals
 Stored at `~/.llm-trace/traces.db` (override with `LLM_TRACE_DIR`).
 One table, inspect it with any SQLite viewer.
 
+## Why not Langfuse / LangSmith?
+
+Those are great, but they need a server, an account, and a network call.
+`llm-trace` is one file, one command, zero setup. Use it for local scripts
+and quick experiments; graduate to a hosted platform when you need dashboards.
+
 ## License
 
 MIT
