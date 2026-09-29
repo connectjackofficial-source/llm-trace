@@ -17,7 +17,9 @@ def main():
     r.add_argument("--tokens-out", type=int, default=0)
     r.add_argument("--latency-ms", type=int, default=0)
 
-    sub.add_parser("summary", help="recent traces")
+    s = sub.add_parser("summary", help="recent traces")
+    s.add_argument("--limit", type=int, default=20)
+    s.add_argument("--model", default=None)
     sub.add_parser("totals", help="aggregated totals")
 
     args = ap.parse_args()
@@ -28,7 +30,10 @@ def main():
                            args.tokens_in, args.tokens_out, args.latency_ms)
         print(json.dumps({"recorded": True, "id": rid}))
     elif args.cmd == "summary":
-        for row in store.summary():
+        rows = store.summary(limit=args.limit)
+        if args.model:
+            rows = [r for r in rows if r["model"] == args.model]
+        for row in rows:
             print(f"[{row['id']}] {row['ts']} {row['model']} "
                   f"in={row['tokens_in']} out={row['tokens_out']} "
                   f"{row['latency_ms']}ms")
