@@ -1,0 +1,7 @@
+# Changelog
+
+## 0.1.0 - 2026-09-29
+
+- Initial release
+- Record, summary, totals commands
+- SQLite storage
