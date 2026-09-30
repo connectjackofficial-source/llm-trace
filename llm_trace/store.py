@@ -67,3 +67,8 @@ class TraceStore:
             "FROM traces").fetchone()
         return {"calls": row[0], "tokens_in": row[1],
                 "tokens_out": row[2], "avg_latency_ms": round(row[3])}
+
+    def clear(self) -> int:
+        cur = self.conn.execute("DELETE FROM traces")
+        self.conn.commit()
+        return cur.rowcount
