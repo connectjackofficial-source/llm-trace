@@ -72,3 +72,12 @@ class TraceStore:
         cur = self.conn.execute("DELETE FROM traces")
         self.conn.commit()
         return cur.rowcount
+
+    def by_model(self) -> dict:
+        """Per-model aggregated stats."""
+        rows = self.conn.execute(
+            "SELECT model, COUNT(*), SUM(tokens_in), SUM(tokens_out), "
+            "AVG(latency_ms) FROM traces GROUP BY model").fetchall()
+        return {r[0]: {"calls": r[1], "tokens_in": r[2],
+                       "tokens_out": r[3],
+                       "avg_latency_ms": round(r[4])} for r in rows}
