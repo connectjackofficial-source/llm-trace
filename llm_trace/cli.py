@@ -21,6 +21,7 @@ def main():
     s.add_argument("--limit", type=int, default=20)
     s.add_argument("--model", default=None)
     sub.add_parser("totals", help="aggregated totals")
+    sub.add_parser("by-model", help="per-model breakdown")
 
     args = ap.parse_args()
     store = TraceStore()
@@ -39,6 +40,8 @@ def main():
                   f"{row['latency_ms']}ms")
     elif args.cmd == "totals":
         print(json.dumps(store.totals(), indent=2))
+    elif args.cmd == "by-model":
+        print(json.dumps(store.by_model(), indent=2))
 
 
 if __name__ == "__main__":
