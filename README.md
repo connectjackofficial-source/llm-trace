@@ -31,6 +31,9 @@ python -m llm_trace.cli summary
 
 # totals
 python -m llm_trace.cli totals
+
+# per-model breakdown
+python -m llm_trace.cli by-model
 ```
 
 ## Data
