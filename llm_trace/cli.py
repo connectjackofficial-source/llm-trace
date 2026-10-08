@@ -22,6 +22,14 @@ def main():
     s.add_argument("--model", default=None)
     sub.add_parser("totals", help="aggregated totals")
     sub.add_parser("by-model", help="per-model breakdown")
+    sub.add_parser("clear", help="delete all traces")
+
+    p = sub.add_parser("prune", help="keep only the newest N traces")
+    p.add_argument("--keep", type=int, default=1000)
+
+    e = sub.add_parser("export", help="export traces to CSV")
+    e.add_argument("--out", default=None)
+    e.add_argument("--limit", type=int, default=500)
 
     args = ap.parse_args()
     store = TraceStore()
@@ -42,6 +50,13 @@ def main():
         print(json.dumps(store.totals(), indent=2))
     elif args.cmd == "by-model":
         print(json.dumps(store.by_model(), indent=2))
+    elif args.cmd == "clear":
+        print(json.dumps({"deleted": store.clear()}))
+    elif args.cmd == "prune":
+        print(json.dumps({"deleted": store.prune(keep=args.keep)}))
+    elif args.cmd == "export":
+        out = store.export_csv(path=args.out, limit=args.limit)
+        print(json.dumps({"exported": str(out), "rows": args.limit}))
 
 
 if __name__ == "__main__":

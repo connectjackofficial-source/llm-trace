@@ -41,6 +41,15 @@ class TraceStore:
         self.conn = sqlite3.connect(self.path)
         self.conn.executescript(SCHEMA)
 
+    def close(self):
+        self.conn.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        self.close()
+
     def record(self, model: str, prompt: str, response: str,
                tokens_in: int = 0, tokens_out: int = 0,
                latency_ms: int = 0, tags: Optional[list] = None) -> int:
@@ -81,3 +90,26 @@ class TraceStore:
         return {r[0]: {"calls": r[1], "tokens_in": r[2],
                        "tokens_out": r[3],
                        "avg_latency_ms": round(r[4])} for r in rows}
+
+    def prune(self, keep: int = 1000) -> int:
+        """Delete the oldest traces, keeping the newest *keep* rows."""
+        cur = self.conn.execute(
+            "DELETE FROM traces WHERE id NOT IN "
+            "(SELECT id FROM traces ORDER BY id DESC LIMIT ?)", (keep,))
+        self.conn.commit()
+        return cur.rowcount
+
+    def export_csv(self, path: Optional[Path] = None,
+                   limit: int = 500) -> Path:
+        """Write recent traces to a CSV file. Returns the output path."""
+        import csv
+        out = Path(path) if path else self.path.with_name("traces.csv")
+        rows = self.conn.execute(
+            "SELECT id, ts, model, tokens_in, tokens_out, latency_ms, "
+            "prompt FROM traces ORDER BY id DESC LIMIT ?", (limit,)).fetchall()
+        with open(out, "w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f)
+            writer.writerow(["id", "ts", "model", "tokens_in",
+                             "tokens_out", "latency_ms", "prompt"])
+            writer.writerows(rows)
+        return out
