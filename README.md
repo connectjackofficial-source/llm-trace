@@ -34,6 +34,15 @@ python -m llm_trace.cli totals
 
 # per-model breakdown
 python -m llm_trace.cli by-model
+
+# keep only the newest 500 traces
+python -m llm_trace.cli prune --keep 500
+
+# export recent traces to CSV (handy for spreadsheets)
+python -m llm_trace.cli export --out traces.csv
+
+# wipe everything
+python -m llm_trace.cli clear
 ```
 
 ## Data
