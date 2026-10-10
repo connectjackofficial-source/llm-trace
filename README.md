@@ -41,6 +41,9 @@ python -m llm_trace.cli prune --keep 500
 # export recent traces to CSV (handy for spreadsheets)
 python -m llm_trace.cli export --out traces.csv
 
+# per-day totals for the last week (calls, tokens, avg latency)
+python -m llm_trace.cli digest --days 7
+
 # wipe everything
 python -m llm_trace.cli clear
 ```
