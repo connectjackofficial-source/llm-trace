@@ -106,6 +106,16 @@ class TraceStore:
                         "avg_latency_ms": round(avg) if avg else 0}
         return out
 
+    def slowest(self, n: int = 5) -> list[dict]:
+        """The N slowest calls (latency > 0), most recent first."""
+        rows = self.conn.execute(
+            "SELECT id, ts, model, prompt, latency_ms FROM traces "
+            "WHERE latency_ms > 0 ORDER BY latency_ms DESC, id DESC LIMIT ?",
+            (n,)).fetchall()
+        return [{"id": r[0], "ts": r[1], "model": r[2],
+                 "prompt": (r[3] or "")[:60], "latency_ms": r[4]}
+                for r in rows]
+
     def prune(self, keep: int = 1000) -> int:
         """Delete the oldest traces, keeping the newest *keep* rows."""
         cur = self.conn.execute(
