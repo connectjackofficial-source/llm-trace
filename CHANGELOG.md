@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.0 - 2026-10-10
+
+- `digest` command: per-day totals for the last N days
+- `digest(days)` store method with SQL date filtering
+
 ## 0.2.0 - 2026-10-08
 
 - `prune` command: keep only the newest N traces
