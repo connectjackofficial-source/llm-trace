@@ -34,6 +34,9 @@ def main():
     d = sub.add_parser("digest", help="per-day totals for the last N days")
     d.add_argument("--days", type=int, default=7)
 
+    slow = sub.add_parser("slow", help="the N slowest calls (perf outliers)")
+    slow.add_argument("--n", type=int, default=5)
+
     args = ap.parse_args()
     store = TraceStore()
 
@@ -62,6 +65,8 @@ def main():
         print(json.dumps({"exported": str(out), "rows": args.limit}))
     elif args.cmd == "digest":
         print(json.dumps(store.digest(days=args.days), indent=2))
+    elif args.cmd == "slow":
+        print(json.dumps(store.slowest(n=args.n), indent=2))
 
 
 if __name__ == "__main__":
