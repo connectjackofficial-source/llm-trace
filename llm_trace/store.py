@@ -91,6 +91,21 @@ class TraceStore:
                        "tokens_out": r[3],
                        "avg_latency_ms": round(r[4])} for r in rows}
 
+    def digest(self, days: int = 7) -> dict:
+        """Per-day totals for the last N days: calls, tokens, avg latency."""
+        out = {}
+        rows = self.conn.execute(
+            "SELECT substr(ts,1,10) AS day, COUNT(*), SUM(tokens_in), "
+            "SUM(tokens_out), AVG(latency_ms) FROM traces "
+            "WHERE substr(ts,1,10) >= date('now', ?) "
+            "GROUP BY day ORDER BY day",
+            (f"-{days} days",)).fetchall()
+        for day, calls, tin, tout, avg in rows:
+            out[day] = {"calls": calls, "tokens_in": tin,
+                        "tokens_out": tout,
+                        "avg_latency_ms": round(avg) if avg else 0}
+        return out
+
     def prune(self, keep: int = 1000) -> int:
         """Delete the oldest traces, keeping the newest *keep* rows."""
         cur = self.conn.execute(

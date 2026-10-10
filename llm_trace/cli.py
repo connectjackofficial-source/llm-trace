@@ -31,6 +31,9 @@ def main():
     e.add_argument("--out", default=None)
     e.add_argument("--limit", type=int, default=500)
 
+    d = sub.add_parser("digest", help="per-day totals for the last N days")
+    d.add_argument("--days", type=int, default=7)
+
     args = ap.parse_args()
     store = TraceStore()
 
@@ -57,6 +60,8 @@ def main():
     elif args.cmd == "export":
         out = store.export_csv(path=args.out, limit=args.limit)
         print(json.dumps({"exported": str(out), "rows": args.limit}))
+    elif args.cmd == "digest":
+        print(json.dumps(store.digest(days=args.days), indent=2))
 
 
 if __name__ == "__main__":
