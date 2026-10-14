@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.0 - 2026-10-14
+
+- `model_health(since_days)` — per-model call/error counts and error
+  rates, sorted so the sick model surfaces first
+- `health` CLI command (alias `--since-days`)
+
 ## 0.4.0 - 2026-10-14
 
 - `errors(limit)` store method: flag calls whose response matches known
