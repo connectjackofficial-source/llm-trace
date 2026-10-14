@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.0 - 2026-10-14
+
+- `errors(limit)` store method: flag calls whose response matches known
+  error markers (error/exception/timeout/denied/retry…)
+- `errors` CLI command: surface failing calls with the matched marker
+
 ## 0.3.0 - 2026-10-10
 
 - `digest` command: per-day totals for the last N days
