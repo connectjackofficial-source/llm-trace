@@ -91,6 +91,40 @@ class TraceStore:
                        "tokens_out": r[3],
                        "avg_latency_ms": round(r[4])} for r in rows}
 
+    def model_health(self, since_days: int = 30) -> list:
+        """Per-model reliability for the last *since_days* days.
+
+        Returns [{"model", "calls", "errors", "error_rate",
+        "avg_latency_ms"}] sorted by error rate descending — the list to
+        scan when a pipeline starts failing: which model went sick, and
+        how badly.
+        """
+        cutoff = time.time() - since_days * 86400
+        rows = self.conn.execute(
+            "SELECT model, response, latency_ms FROM traces WHERE ts >= ?",
+            (time.strftime("%Y-%m-%dT%H:%M:%S",
+                           time.localtime(cutoff)),)).fetchall()
+        agg = {}
+        for model, response, latency in rows:
+            m = model or "unknown"
+            entry = agg.setdefault(
+                m, {"calls": 0, "errors": 0, "latencies": []})
+            entry["calls"] += 1
+            entry["errors"] += 1 if self._is_error(response) else 0
+            entry["latencies"].append(latency or 0)
+        out = []
+        for model, entry in agg.items():
+            out.append({
+                "model": model,
+                "calls": entry["calls"],
+                "errors": entry["errors"],
+                "error_rate": round(entry["errors"] / entry["calls"], 3),
+                "avg_latency_ms": round(sum(entry["latencies"])
+                                        / len(entry["latencies"]), 1),
+            })
+        out.sort(key=lambda r: -r["error_rate"])
+        return out
+
     def digest(self, days: int = 7) -> dict:
         """Per-day totals for the last N days: calls, tokens, avg latency."""
         out = {}
@@ -115,6 +149,14 @@ class TraceStore:
         return [{"id": r[0], "ts": r[1], "model": r[2],
                  "prompt": (r[3] or "")[:60], "latency_ms": r[4]}
                 for r in rows]
+
+    def _is_error(self, response: str) -> bool:
+        """Heuristic: does the response look like an error/retry signal?"""
+        markers = ("error", "exception", "traceback", "failed", "timeout",
+                   "rate limit", "invalid", "denied", "unavailable",
+                   "internal server error", "retry")
+        resp = (response or "").lower()
+        return any(m in resp for m in markers)
 
     def errors(self, limit: int = 50) -> list[dict]:
         """Recent calls whose response looks like an error.

@@ -40,6 +40,9 @@ def main():
     err = sub.add_parser("errors", help="recent calls with error responses")
     err.add_argument("--limit", type=int, default=50)
 
+    h = sub.add_parser("health", help="per-model reliability (error rates)")
+    h.add_argument("--since-days", type=int, default=30)
+
     args = ap.parse_args()
     store = TraceStore()
 
@@ -72,6 +75,9 @@ def main():
         print(json.dumps(store.slowest(n=args.n), indent=2))
     elif args.cmd == "errors":
         print(json.dumps(store.errors(limit=args.limit), indent=2))
+    elif args.cmd == "health":
+        print(json.dumps(store.model_health(since_days=args.since_days),
+                         indent=2))
 
 
 if __name__ == "__main__":
