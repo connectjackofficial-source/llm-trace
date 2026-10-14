@@ -37,6 +37,9 @@ def main():
     slow = sub.add_parser("slow", help="the N slowest calls (perf outliers)")
     slow.add_argument("--n", type=int, default=5)
 
+    err = sub.add_parser("errors", help="recent calls with error responses")
+    err.add_argument("--limit", type=int, default=50)
+
     args = ap.parse_args()
     store = TraceStore()
 
@@ -67,6 +70,8 @@ def main():
         print(json.dumps(store.digest(days=args.days), indent=2))
     elif args.cmd == "slow":
         print(json.dumps(store.slowest(n=args.n), indent=2))
+    elif args.cmd == "errors":
+        print(json.dumps(store.errors(limit=args.limit), indent=2))
 
 
 if __name__ == "__main__":

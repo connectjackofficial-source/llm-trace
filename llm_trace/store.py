@@ -116,6 +116,34 @@ class TraceStore:
                  "prompt": (r[3] or "")[:60], "latency_ms": r[4]}
                 for r in rows]
 
+    def errors(self, limit: int = 50) -> list[dict]:
+        """Recent calls whose response looks like an error.
+
+        Heuristic: response contains a known error marker, or the model
+        name / tags mention retry. Returns newest first with the matched
+        marker exposed.
+        """
+        markers = ("error", "exception", "traceback", "failed", "timeout",
+                   "rate limit", "invalid", "denied", "unavailable",
+                   "internal server error", "retry")
+        rows = self.conn.execute(
+            "SELECT id, ts, model, prompt, response, latency_ms, tags "
+            "FROM traces ORDER BY id DESC LIMIT ?", (max(limit * 4, 100),)
+        ).fetchall()
+        out = []
+        for r in rows:
+            resp = (r[4] or "").lower()
+            hit = next((m for m in markers if m in resp), None)
+            if hit:
+                out.append({"id": r[0], "ts": r[1], "model": r[2],
+                            "prompt": (r[3] or "")[:60],
+                            "error": hit,
+                            "response": (r[4] or "")[:200],
+                            "latency_ms": r[5], "tags": r[6]})
+            if len(out) >= limit:
+                break
+        return out
+
     def prune(self, keep: int = 1000) -> int:
         """Delete the oldest traces, keeping the newest *keep* rows."""
         cur = self.conn.execute(
