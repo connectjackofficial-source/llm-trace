@@ -77,6 +77,25 @@ class TraceStore:
         return {"calls": row[0], "tokens_in": row[1],
                 "tokens_out": row[2], "avg_latency_ms": round(row[3])}
 
+    def export_json(self, path) -> int:
+        """Dump every trace to a JSON array for archival or analysis.
+
+        Returns the number of traces exported.
+        """
+        rows = self.conn.execute(
+            "SELECT id, ts, model, prompt, response, tokens_in, tokens_out, "
+            "latency_ms, tags FROM traces ORDER BY id").fetchall()
+        keys = ["id", "ts", "model", "prompt", "response", "tokens_in",
+                "tokens_out", "latency_ms", "tags"]
+        out = []
+        for r in rows:
+            d = dict(zip(keys, r))
+            d["tags"] = json.loads(d["tags"] or "[]")
+            out.append(d)
+        Path(path).write_text(json.dumps(out, ensure_ascii=False, indent=1),
+                              encoding="utf-8")
+        return len(out)
+
     def clear(self) -> int:
         cur = self.conn.execute("DELETE FROM traces")
         self.conn.commit()
