@@ -227,3 +227,34 @@ class TraceStore:
                              "tokens_out", "latency_ms", "prompt"])
             writer.writerows(rows)
         return out
+
+    def search_prompts(self, query: str, limit: int = 20) -> list[dict]:
+        """Find traces whose prompt contains *query* (substring match)."""
+        rows = self.conn.execute(
+            "SELECT id, ts, model, prompt, latency_ms FROM traces "
+            "WHERE prompt LIKE ? ORDER BY id DESC LIMIT ?",
+            (f"%{query}%", limit)).fetchall()
+        return [{"id": r[0], "ts": r[1], "model": r[2], "prompt": r[3],
+                 "latency_ms": r[4]} for r in rows]
+
+    def stats_by_day(self, days: int = 7) -> list[dict]:
+        """Per-day call counts and latency (gap-free series for charts)."""
+        rows = self.conn.execute(
+            "SELECT substr(ts, 1, 10) AS day, COUNT(*), "
+            "COALESCE(SUM(latency_ms), 0), "
+            "COALESCE(AVG(latency_ms), 0) FROM traces "
+            "WHERE ts >= datetime('now', ?) GROUP BY day",
+            (f"-{days} days",)).fetchall()
+        lookup = {r[0]: r for r in rows}
+        out = []
+        today = time.strftime("%Y-%m-%d")
+        from datetime import date, timedelta
+        d = date.fromisoformat(today) - timedelta(days=days - 1)
+        for _ in range(days):
+            key = d.isoformat()
+            r = lookup.get(key)
+            out.append({"day": key, "calls": r[1] if r else 0,
+                        "latency_ms": r[2] if r else 0,
+                        "avg_ms": round(r[3] or 0, 1) if r else 0.0})
+            d += timedelta(days=1)
+        return out
